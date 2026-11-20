@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SM7 Admin - কন্ট্রোল প্যানেল</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+tailwind.config={theme:{extend:{colors:{navy:'#06132F',skyblue:'#13B9F3',lime:'#C9F500'},fontFamily:{bn:['Hind Siliguri','Inter','sans-serif']}}}}
+</script>
+<style>
+*{font-family:'Hind Siliguri','Inter',sans-serif}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+.navitem.active{background:rgba(255,255,255,0.08);color:#fff}
+.navitem.active .navdot{background:#C9F500}
+.tabpanel{display:none}
+.tabpanel.active{display:block}
+.skel{background:linear-gradient(90deg,#f1f5f9,#e2e8f0,#f1f5f9);background-size:200% 100%;animation:sk 1.2s infinite}
+@keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* SM7 premium responsive layer */
+:root{color-scheme:light} html{scroll-behavior:smooth;scroll-padding-top:84px} body{overflow-x:hidden} button,a,input,select,textarea{touch-action:manipulation} button{min-height:40px} input,select,textarea{max-width:100%} img{max-width:100%} .tabpanel{animation:sm7fade .22s ease} @keyframes sm7fade{from{opacity:.6;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}} .sm7-card{border:1px solid #e5eaf1;border-radius:20px;background:#fff;box-shadow:0 8px 28px rgba(6,19,47,.045)} .sm7-gradient{background:linear-gradient(135deg,#06132f 0%,#12396b 55%,#13b9f3 140%)} .sm7-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:999px;padding:.8rem 1.1rem;font-weight:700;transition:.18s} .sm7-btn:active{transform:scale(.98)} .sm7-muted{color:#64748b;font-size:.84rem} .sm7-field{width:100%;border:1px solid #dbe3ee;background:#f8fafc;border-radius:13px;padding:.8rem .9rem;outline:none} .sm7-field:focus{border-color:#13b9f3;box-shadow:0 0 0 3px #13b9f320;background:#fff} .sm7-section{padding:clamp(2.5rem,6vw,5rem) 0} @media(max-width:640px){.sm7-mobile-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.sm7-mobile-pad{padding-left:1rem!important;padding-right:1rem!important}}
+</style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-800 antialiased">
+
+<!-- ================= LOGIN SCREEN ================= -->
+<div id="loginScreen" class="min-h-screen grid place-items-center px-4">
+  <div class="w-full max-w-[400px]">
+    <div class="text-center mb-6">
+      <div class="w-14 h-14 rounded-full bg-navy grid place-items-center mx-auto"><i data-lucide="shield-check" class="w-7 h-7 text-lime"></i></div>
+      <p class="mt-3 font-extrabold text-navy text-[18px]">SM7 CO & CYBER CAFE</p>
+      <p class="text-[12px] text-slate-500">অ্যাডমিন কন্ট্রোল প্যানেল</p>
+    </div>
+    <div class="bg-white border border-slate-200 rounded-[20px] p-6">
+      <div id="loginConfigWarning" class="hidden mb-4 bg-amber-50 border border-amber-200 text-amber-800 text-[12px] rounded-xl p-3">
+        Firebase কনফিগ সেট করা হয়নি। এই ফাইলের শুরুতে <b>PASTE YOUR FIREBASE CONFIG HERE</b> জায়গায় কাস্টমার সাইটের মতো একই Firebase প্রজেক্টের কনফিগ পেস্ট করুন। তারপর Firebase Console &gt; Authentication এ একটি Email/Password ইউজার তৈরি করুন - সেটাই হবে অ্যাডমিন লগইন।
+      </div>
+      <label class="text-[12px] font-medium text-slate-600">অ্যাডমিন ইমেইল</label>
+      <input id="loginEmail" type="email" autocomplete="username" class="mt-1 w-full rounded-xl px-4 py-3 border bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-skyblue/30 focus:border-skyblue" placeholder="admin@example.com"/>
+      <label class="mt-4 block text-[12px] font-medium text-slate-600">পাসওয়ার্ড</label>
+      <input id="loginPass" type="password" autocomplete="current-password" class="mt-1 w-full rounded-xl px-4 py-3 border bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-skyblue/30 focus:border-skyblue" placeholder="••••••••"/>
+      <button id="loginBtn" class="mt-5 w-full bg-navy text-white py-3.5 rounded-full font-semibold hover:bg-black transition disabled:opacity-50">লগইন করুন</button>
+      <p id="loginError" class="hidden mt-3 text-[12px] text-red-600 text-center"></p>
+    </div>
+    <p class="text-center text-[11px] text-slate-400 mt-4">শুধুমাত্র অনুমোদিত অ্যাডমিনদের জন্য</p>
+  </div>
+</div>
+
+<!-- ================= APP SHELL ================= -->
+<div id="appShell" class="hidden min-h-screen flex">
+
+  <!-- SIDEBAR -->
+  <aside class="hidden lg:flex lg:w-[248px] bg-navy text-white/80 lg:flex-col lg:fixed lg:h-screen">
+    <div class="flex items-center justify-between px-5 py-5 border-b border-white/10">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-lime"></span>
+        <div>
+          <p class="text-white font-extrabold text-[13px] leading-none">SM7 ADMIN</p>
+          <p class="text-[10px] text-white/40">Control Panel</p>
+        </div>
+      </div>
+      <button id="mobNavBtn" class="lg:hidden w-9 h-9 grid place-items-center rounded-full bg-white/10"><i data-lucide="menu" class="w-4 h-4"></i></button>
+    </div>
+    <nav id="sideNav" class="hidden lg:block flex-1 px-3 py-4 space-y-1 text-[13px] font-medium overflow-y-auto">
+      <button data-tab="dashboard" class="navitem active w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white/5"><i data-lucide="layout-dashboard" class="w-4 h-4"></i>ড্যাশবোর্ড<span class="navdot ml-auto w-1.5 h-1.5 rounded-full"></span></button>
+      <button data-tab="orders" class="navitem w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white/5"><i data-lucide="clipboard-list" class="w-4 h-4"></i>সাইবার ক্যাফে সার্ভিস অর্ডার<span class="navdot ml-auto w-1.5 h-1.5 rounded-full"></span></button>
+      <button data-tab="services" class="navitem w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white/5"><i data-lucide="layers" class="w-4 h-4"></i>সার্ভিস / প্রোডাক্ট<span class="navdot ml-auto w-1.5 h-1.5 rounded-full"></span></button>
+
+      <button data-tab="shoporders" class="navitem w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white/5"><i data-lucide="shopping-bag" class="w-4 h-4"></i>কমার্স অর্ডার<span class="navdot ml-auto w-1.5 h-1.5 rounded-full"></span></button>
+      <button data-tab="printorders" class="navitem w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white/5"><i data-lucide="printer" class="w-4 h-4"></i>প্রিন্ট অর্ডার<span class="navdot ml-auto w-1.5 h-1.5 rounded-full"></span></button>
+      <button data-tab="shopproducts" class="navitem w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white/5"><i data-lucide="package" class="w-4 h-4"></i>শপিং প্রোডাক্ট<span class="navdot ml-auto w-1.5 h-1.5 rounded-full"></span></button>
+      <button data-tab="customers" class="navitem w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white/5"><i data-lucide="users" class="w-4 h-4"></i>ইউজার / Coin / Voucher<span class="navdot ml-auto w-1.5 h-1.5 rounded-full"></span></button>
+      <button data-tab="ads" class="navitem w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white/5"><i data-lucide="megaphone" class="w-4 h-4"></i>বিজ্ঞাপন<span class="navdot ml-auto w-1.5 h-1.5 rounded-full"></span></button>
+      <button data-tab="settings" class="navitem w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white/5"><i data-lucide="settings" class="w-4 h-4"></i>সেটিংস<span class="navdot ml-auto w-1.5 h-1.5 rounded-full"></span></button>
+    </nav>
+    <div class="hidden lg:block px-3 py-4 border-t border-white/10">
+      <button id="logoutBtn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white/5 text-[13px]"><i data-lucide="log-out" class="w-4 h-4"></i>লগ আউট</button>
+    </div>
+  </aside>
+
+  <!-- MOBILE NAV DRAWER -->
+  <div id="mobNavDrawer" class="hidden lg:hidden fixed inset-0 z-[90] bg-black/50">
+    <div class="w-[80%] max-w-[280px] h-full bg-navy text-white/80 p-4">
+      <div class="flex items-center justify-between mb-4"><p class="font-extrabold text-white text-[14px]">SM7 ADMIN</p><button id="mobNavClose" class="w-8 h-8 grid place-items-center rounded-full bg-white/10"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+      <div id="sideNavMobWrap" class="space-y-1 text-[13px] font-medium"></div>
+      <button id="logoutBtnMob" class="mt-4 w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left bg-white/5 text-[13px]"><i data-lucide="log-out" class="w-4 h-4"></i>লগ আউট</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <main class="flex-1 lg:ml-[248px] min-h-screen min-w-0">
+    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-100 px-4 lg:px-8 h-[64px] flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <button id="mobNavBtn2" class="lg:hidden w-9 h-9 grid place-items-center rounded-full bg-slate-100"><i data-lucide="menu" class="w-4 h-4"></i></button>
+        <h1 id="pageTitle" class="font-bold text-[16px] lg:text-[19px] text-navy">ড্যাশবোর্ড</h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="connState" class="hidden md:inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full bg-slate-100 text-slate-500"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>সংযোগ হচ্ছে...</span>
+        <span id="adminEmailTag" class="text-[12px] text-slate-500 hidden md:inline"></span>
+        <div class="w-9 h-9 rounded-full bg-navy text-white grid place-items-center text-[13px] font-bold"><i data-lucide="user" class="w-4 h-4"></i></div>
+      </div>
+    </header>
+
+    <div class="p-4 lg:p-8 max-w-[1280px]">
+
+      <!-- ============ DASHBOARD ============ -->
+      <section id="tab-dashboard" class="tabpanel active">
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <div class="bg-white border rounded-2xl p-4"><p class="text-[11px] text-slate-500">মোট অর্ডার</p><p id="statTotal" class="mt-1 font-extrabold text-[24px] text-navy">০</p></div>
+          <div class="bg-white border rounded-2xl p-4"><p class="text-[11px] text-slate-500">নতুন / Received</p><p id="statReceived" class="mt-1 font-extrabold text-[24px] text-amber-600">০</p></div>
+          <div class="bg-white border rounded-2xl p-4"><p class="text-[11px] text-slate-500">চলছে</p><p id="statProgress" class="mt-1 font-extrabold text-[24px] text-skyblue">০</p></div>
+          <div class="bg-white border rounded-2xl p-4"><p class="text-[11px] text-slate-500">সম্পন্ন</p><p id="statDone" class="mt-1 font-extrabold text-[24px] text-emerald-600">০</p></div>
+          <div class="bg-white border rounded-2xl p-4"><p class="text-[11px] text-slate-500">বাতিল</p><p id="statRejected" class="mt-1 font-extrabold text-[24px] text-red-600">০</p></div>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-4 mt-4">
+          <div class="lg:col-span-2 bg-white border rounded-2xl p-5">
+            <div class="flex items-center justify-between"><p class="font-semibold text-[14px] text-navy">গত ৭ দিনের অর্ডার</p><span class="text-[11px] text-slate-400">Received count / day</span></div>
+            <div class="mt-3 h-[220px]"><canvas id="weekChart"></canvas></div>
+          </div>
+          <div class="bg-white border rounded-2xl p-5">
+            <p class="font-semibold text-[14px] text-navy">পেমেন্ট ধরন</p>
+            <div class="mt-3 h-[220px]"><canvas id="payChart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="bg-white border rounded-2xl p-5 mt-4">
+          <div class="flex items-center justify-between">
+            <p class="font-semibold text-[14px] text-navy">সাম্প্রতিক অর্ডার</p>
+            <button data-tab-link="orders" class="text-[12px] text-skyblue font-semibold">সব দেখুন →</button>
+          </div>
+          <div id="recentOrdersWrap" class="mt-3 overflow-x-auto"></div>
+        </div>
+      </section>
+
+      <!-- ============ ORDERS ============ -->
+      <section id="tab-orders" class="tabpanel">
+        <div class="bg-white border rounded-2xl p-4">
+          <div class="flex flex-wrap gap-2 items-center">
+            <div class="relative flex-1 min-w-[200px]">
+              <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+              <input id="orderSearch" placeholder="নাম, ফোন বা Reference খুঁজুন..." class="w-full pl-9 pr-3 py-2.5 rounded-full border bg-slate-50 focus:bg-white outline-none text-[13px]"/>
+            </div>
+            <select id="orderStatusFilter" class="px-3 py-2.5 rounded-full border bg-slate-50 text-[13px] outline-none">
+              <option value="">সব Status</option>
+              <option value="Received">Received</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+            <select id="orderPayFilter" class="px-3 py-2.5 rounded-full border bg-slate-50 text-[13px] outline-none">
+              <option value="">সব পেমেন্ট</option>
+              <option value="UPI">UPI</option>
+              <option value="Cash">Cash</option>
+            </select>
+            <button id="orderExportBtn" class="px-4 py-2.5 rounded-full border text-[13px] font-semibold flex items-center gap-1.5"><i data-lucide="download" class="w-3.5 h-3.5"></i>CSV এক্সপোর্ট</button>
+          </div>
+        </div>
+
+        <div class="bg-white border rounded-2xl mt-4 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-[13px]">
+              <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase"><tr>
+                <th class="text-left px-4 py-3">Reference</th><th class="text-left px-4 py-3">কাস্টমার</th><th class="text-left px-4 py-3">সার্ভিস</th><th class="text-left px-4 py-3">পেমেন্ট</th><th class="text-left px-4 py-3">Status</th><th class="text-left px-4 py-3">তারিখ</th><th class="text-left px-4 py-3"></th>
+              </tr></thead>
+              <tbody id="ordersTbody"></tbody>
+            </table>
+          </div>
+          <div id="ordersEmpty" class="hidden py-16 text-center text-slate-400 text-[13px]">কোনো অর্ডার পাওয়া যায়নি</div>
+        </div>
+      </section>
+
+      <!-- ============ SERVICES ============ -->
+      <section id="tab-services" class="tabpanel">
+        <div class="flex flex-wrap gap-2 items-center justify-between bg-white border rounded-2xl p-4">
+          <p class="text-[13px] text-slate-500">কাস্টমার সাইটে দেখানো সার্ভিস/প্রোডাক্ট লিস্ট এখান থেকেই নিয়ন্ত্রণ হয়</p>
+          <div class="flex gap-2">
+            <button id="seedServicesBtn" class="px-4 py-2.5 rounded-full border text-[13px] font-semibold flex items-center gap-1.5"><i data-lucide="download-cloud" class="w-3.5 h-3.5"></i>ডিফল্ট ২৭টি সার্ভিস লোড করুন</button>
+            <button id="addServiceBtn" class="px-4 py-2.5 rounded-full bg-navy text-white text-[13px] font-semibold flex items-center gap-1.5"><i data-lucide="plus" class="w-3.5 h-3.5"></i>নতুন সার্ভিস যুক্ত করুন</button>
+          </div>
+        </div>
+        <div id="servicesGridAdmin" class="grid md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4"></div>
+        <div id="servicesEmptyAdmin" class="hidden py-16 text-center text-slate-400 text-[13px] bg-white border rounded-2xl mt-4">কোনো সার্ভিস নেই - "নতুন সার্ভিস যুক্ত করুন" চাপুন বা ডিফল্ট লিস্ট লোড করুন</div>
+      </section>
+
+
+      <!-- ============ E-COMMERCE ORDERS ============ -->
+      <section id="tab-shoporders" class="tabpanel">
+        <div class="sm7-card p-4 md:p-5"><div class="flex flex-wrap gap-3 items-center justify-between"><div><h2 class="font-bold text-lg text-navy">কমার্স অর্ডার / Shopping Orders</h2><p class="sm7-muted mt-1">প্রোডাক্ট অর্ডার, পেমেন্ট, স্টক ও ৩০ মিনিটের ক্যানসেল নীতি পরিচালনা করুন।</p></div><button id="refreshShopOrders" class="sm7-btn bg-slate-100 text-navy">রিফ্রেশ</button></div><div id="shopOrdersList" class="mt-4 grid gap-3"><p class="sm7-muted">অর্ডার লোড হচ্ছে…</p></div></div>
+      </section>
+      <!-- ============ PRINT ORDERS ============ -->
+      <section id="tab-printorders" class="tabpanel">
+        <div class="sm7-card p-4 md:p-5"><div class="flex flex-wrap gap-3 items-center justify-between"><div><h2 class="font-bold text-lg text-navy">প্রিন্ট সার্ভিস অর্ডার / Print Queue</h2><p class="sm7-muted mt-1">মূল ফাইল ডাউনলোড করুন। ফাইল মুছলে অর্ডার ইতিহাস থাকবে।</p></div><button id="refreshPrintOrders" class="sm7-btn bg-slate-100 text-navy">রিফ্রেশ</button></div><div id="printOrdersList" class="mt-4 grid gap-3"><p class="sm7-muted">অর্ডার লোড হচ্ছে…</p></div></div>
+      </section>
+      <!-- ============ PRODUCTS ============ -->
+      <section id="tab-shopproducts" class="tabpanel">
+        <div class="sm7-card p-4 md:p-5"><div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="font-bold text-lg text-navy">Shopping Product Manager</h2><p class="sm7-muted mt-1">Image URL ও Google Drive share link ব্যবহার করুন; স্টক ০ হলে Out of Stock হবে।</p></div><button id="addShopProduct" class="sm7-btn bg-navy text-white">＋ প্রোডাক্ট যোগ করুন</button></div><div id="shopProductsList" class="mt-4 grid sm:grid-cols-2 xl:grid-cols-3 gap-3"></div></div>
+      </section>
+      <!-- ============ CUSTOMERS / REWARDS ============ -->
+      <section id="tab-customers" class="tabpanel">
+        <div class="sm7-card p-4 md:p-5"><div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="font-bold text-lg text-navy">Customers, SM7 Coin & Gift Voucher</h2><p class="sm7-muted mt-1">নিরাপত্তার কারণে আসল পাসওয়ার্ড দেখানো হবে না। এখানে reset request ও reward balance পরিচালনা করুন।</p></div><button id="refreshCustomers" class="sm7-btn bg-slate-100 text-navy">রিফ্রেশ</button></div><div id="resetRequests" class="mt-4"></div><div id="customersList" class="mt-4 grid gap-3"><p class="sm7-muted">ইউজার লোড হচ্ছে…</p></div><div class="mt-6 border-t pt-5"><h3 class="font-bold">Gift Voucher / Coupon</h3><form id="voucherForm" class="mt-3 grid sm:grid-cols-2 lg:grid-cols-4 gap-3"><input id="voucherCode" class="sm7-field" placeholder="Voucher / Coupon Code" required><input id="voucherValue" type="number" min="1" class="sm7-field" placeholder="Discount amount (₹)" required><input id="voucherQty" type="number" min="1" value="1" class="sm7-field" placeholder="Quantity"><input id="voucherPhone" inputmode="numeric" maxlength="10" class="sm7-field" placeholder="Assign to mobile (optional)"><button class="sm7-btn bg-navy text-white" type="submit">Voucher তৈরি করুন</button></form><div id="vouchersList" class="mt-3 grid gap-2"></div></div></div>
+      </section>
+      <!-- ============ ADS ============ -->
+      <section id="tab-ads" class="tabpanel">
+        <div class="flex flex-wrap gap-2 items-center justify-between bg-white border rounded-2xl p-4">
+          <p class="text-[13px] text-slate-500">এখানে যুক্ত করা বিজ্ঞাপন কাস্টমার ওয়েবসাইটে নির্ধারিত জায়গায় সরাসরি দেখা যাবে</p>
+          <button id="addAdBtn" class="px-4 py-2.5 rounded-full bg-navy text-white text-[13px] font-semibold flex items-center gap-1.5"><i data-lucide="plus" class="w-3.5 h-3.5"></i>নতুন বিজ্ঞাপন যুক্ত করুন</button>
+        </div>
+        <div id="adsGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4"></div>
+        <div id="adsEmpty" class="hidden py-16 text-center text-slate-400 text-[13px] bg-white border rounded-2xl mt-4">কোনো বিজ্ঞাপন যুক্ত করা হয়নি</div>
+      </section>
+
+      <!-- ============ SETTINGS ============ -->
+      <section id="tab-settings" class="tabpanel">
+        <div class="bg-white border rounded-2xl p-5">
+          <p class="font-semibold text-navy">সংযোগ তথ্য</p>
+          <p class="text-[13px] text-slate-500 mt-1">এই অ্যাডমিন প্যানেল এবং কাস্টমার ওয়েবসাইট একই Firebase প্রজেক্ট ব্যবহার করে, তাই দুটোতে একই কনফিগ পেস্ট করতে হবে (এই ফাইলের উপরের দিকে script ট্যাগে)।</p>
+          <div class="mt-3 grid md:grid-cols-2 gap-3 text-[13px]">
+            <div class="bg-slate-50 border rounded-xl p-3"><p class="text-[11px] text-slate-500">Project ID</p><p id="cfgProjectId" class="font-mono font-semibold">-</p></div>
+            <div class="bg-slate-50 border rounded-xl p-3"><p class="text-[11px] text-slate-500">Auth Domain</p><p id="cfgAuthDomain" class="font-mono font-semibold">-</p></div>
+          </div>
+        </div>
+
+        <div class="bg-white border rounded-2xl p-5 mt-4">
+          <p class="font-semibold text-navy">Firestore Security Rules (রেফারেন্স)</p>
+          <p class="text-[13px] text-slate-500 mt-1">পুরোনো Rules পুরোটা মুছে ফেলবেন না। বিদ্যমান collection rules বজায় রেখে printOrders ও fileChunks-এর match block-টি যোগ করুন। নিচের কোডটি রেফারেন্স।</p>
+          <pre class="mt-3 bg-slate-900 text-slate-100 text-[11.5px] rounded-xl p-4 overflow-x-auto leading-relaxed">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /services/{id} { allow read: if true; allow write: if request.auth != null; }
+    match /ads/{id} { allow read: if true; allow write: if request.auth != null; }
+    match /bookings/{id} { allow create: if true; allow read, update, delete: if request.auth != null; }
+    match /tracking/{id} { allow create: if true; allow read: if true; allow update, delete: if request.auth != null; }
+    match /settings/{id} { allow read: if true; allow write: if request.auth != null; }
+    match /printOrders/{orderId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+      match /fileChunks/{chunkId} {
+        allow create: if request.resource.data.data is string
+          && request.resource.data.data.size() <= 700000;
+        allow read, delete: if request.auth != null;
+      }
+    }
+  }
+}</pre>
+        </div>
+
+        <div class="bg-white border rounded-2xl p-5 mt-4">
+          <p class="font-semibold text-navy">অ্যাডমিন ইউজার তৈরি</p>
+          <p class="text-[13px] text-slate-500 mt-1">Firebase Console &gt; Authentication &gt; Sign-in method &gt; Email/Password চালু করুন, তারপর Users ট্যাব থেকে "Add user" দিয়ে অ্যাডমিনের ইমেইল ও পাসওয়ার্ড যুক্ত করুন। যতজন স্টাফকে অ্যাক্সেস দিতে চান তত ইউজার তৈরি করতে পারেন।</p>
+        </div>
+
+
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 mt-4"><p class="font-bold text-amber-900">নিরাপত্তা ও ফাইল আপলোড নোট</p><p class="text-sm text-amber-900 mt-2">এই HTML ফাইলগুলো Firebase-এর সঙ্গে সংযুক্ত। Phone+password login এখানে Firebase Auth-এর email/password provider-এ phone alias ব্যবহার করে। প্রকৃত Admin password reset, role-based access, নিরাপদ stock reservation, Coin FIFO/expiry, coupon validation এবং payment verification production-এ enforce করতে Firebase Cloud Functions/secure rules প্রয়োজন। User collection-এ password কখনও রাখবেন না। Print file Firestore-এর ছোট chunk document-এ থাকবে; Firebase Storage লাগবে না।</p></div>
+
+
+        <div class="sm7-card p-5 mt-4"><h3 class="font-bold text-navy">Shopping Payment & Online Offer</h3><p class="sm7-muted mt-1">UPI ID ও online payment discount এখানে সেট করুন। Customer checkout-এ QR এবং offer দেখাবে।</p><form id="paymentSettingsForm" class="mt-3 grid sm:grid-cols-3 gap-3"><label class="text-sm sm:col-span-2">UPI ID<input id="shopUpiIdInput" class="sm7-field mt-1" placeholder="name@upi" required></label><label class="text-sm">Online discount %<input id="onlineDiscountInput" type="number" min="0" max="100" step="0.5" class="sm7-field mt-1" value="0"></label><label class="text-sm sm:col-span-3">Payment QR Image URL (ঐচ্ছিক)<input id="paymentQrUrlInput" type="url" class="sm7-field mt-1" placeholder="https://.../qr.png"><span class="text-xs text-slate-500">খালি রাখলে UPI ID থেকে QR তৈরি হবে।</span></label><button class="sm7-btn bg-navy text-white sm:col-span-3" type="submit">Payment Settings সেভ করুন</button></form></div>
+
+        <div class="sm7-card p-5 mt-4"><h3 class="font-bold text-navy">App Download Link / অ্যাপ ডাউনলোড</h3><p class="sm7-muted mt-1">APK বা App page-এর URL দিলে User Panel-এর উপরে Download বাটন দেখা যাবে।</p><form id="appLinkForm" class="mt-3 flex flex-col sm:flex-row gap-2"><input id="appDownloadUrlInput" type="url" class="sm7-field flex-1" placeholder="https://..."><button class="sm7-btn bg-navy text-white" type="submit">লিঙ্ক সেভ করুন</button></form></div>
+
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- ================= MODALS ================= -->
+<div id="modalBackdrop" class="hidden fixed inset-0 z-[110] bg-black/50 backdrop-blur-sm p-4 overflow-y-auto"></div>
+
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-navy text-white px-5 py-3 rounded-full text-[13px] hidden z-[200] shadow-xl"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, setDoc,
+  query, where, orderBy, serverTimestamp, onSnapshot, writeBatch, runTransaction
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import {
+  getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+// ================= PASTE YOUR FIREBASE CONFIG HERE (same project as customer.html) =================
+const firebaseConfig = {
+  apiKey: "AIzaSyBb93mXneZpCtZQcaIrioQL8mntxBX7xaM",
+  authDomain: "sm-digital-hub-4d922.firebaseapp.com",
+  projectId: "sm-digital-hub-4d922",
+  storageBucket: "sm-digital-hub-4d922.firebasestorage.app",
+  messagingSenderId: "1001652785410",
+  appId: "1:1001652785410:web:8613dfc520d51a913af21b"
+};
+// ======================================================================================================
+
+const $ = (s)=>document.querySelector(s);
+const $$ = (s)=>document.querySelectorAll(s);
+function showToast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),3000); }
+function esc(s){ return (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDate(v){
+  try{
+    let d = v && v.toDate ? v.toDate() : (v ? new Date(v) : null);
+    if(!d || isNaN(d.getTime())) return '-';
+    return d.toLocaleString('bn-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  }catch(e){ return '-'; }
+}
+
+const isConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY";
+$('#cfgProjectId').textContent = firebaseConfig.projectId || '-';
+$('#cfgAuthDomain').textContent = firebaseConfig.authDomain || '-';
+if(!isConfigured) $('#loginConfigWarning').classList.remove('hidden');
+
+let app, auth, db, storage;
+if(isConfigured){
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  // storage disabled
+}
+
+/* ---------------- LOGIN ---------------- */
+const loginBtn = $('#loginBtn');
+loginBtn.addEventListener('click', async ()=>{
+  if(!isConfigured){ showToast('প্রথমে Firebase কনফিগ সেট করুন'); return; }
+  const email = $('#loginEmail').value.trim();
+  const pass = $('#loginPass').value;
+  if(!email || !pass){ $('#loginError').textContent='ইমেইল ও পাসওয়ার্ড দিন'; $('#loginError').classList.remove('hidden'); return; }
+  $('#loginError').classList.add('hidden');
+  loginBtn.disabled = true; loginBtn.textContent = 'লগইন হচ্ছে...';
+  // timeout safety - if stuck more than 10s, unlock
+  const t = setTimeout(()=>{
+    loginBtn.disabled = false; loginBtn.textContent = 'লগইন করুন';
+    $('#loginError').textContent = 'নেটওয়ার্ক সমস্যা বা Authorized Domain যোগ করা হয়নি। Firebase > Authentication > Settings > Authorized domains এ cybercafeadmin.netlify.app যোগ করুন';
+    $('#loginError').classList.remove('hidden');
+  }, 10000);
+  try{
+    await signInWithEmailAndPassword(auth, email, pass);
+    clearTimeout(t);
+  }catch(e){
+    clearTimeout(t);
+    console.error('Login error:', e);
+    let msg = 'লগইন ব্যর্থ - ';
+    if(e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found') msg += 'ইমেইল/পাসওয়ার্ড ভুল';
+    else if(e.code === 'auth/operation-not-allowed') msg += 'Email/Password provider Enable করা নেই';
+    else if(e.code === 'auth/unauthorized-domain') msg += 'এই ডোমেইন Authorized নয়। Firebase Console > Authentication > Settings > Authorized domains এ '+location.hostname+' যোগ করুন';
+    else msg += (e.code + ' : ' + e.message);
+    $('#loginError').textContent = msg;
+    $('#loginError').classList.remove('hidden');
+  }finally{
+    loginBtn.disabled = false; loginBtn.textContent = 'লগইন করুন';
+  }
+});
+$('#loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') loginBtn.click(); });
+
+function doLogout(){ signOut(auth); }
+$('#logoutBtn').addEventListener('click', doLogout);
+$('#logoutBtnMob').addEventListener('click', doLogout);
+
+if(isConfigured){
+  onAuthStateChanged(auth, (user)=>{
+    if(user){
+      $('#loginScreen').classList.add('hidden');
+      $('#appShell').classList.remove('hidden');
+      $('#adminEmailTag').textContent = user.email;
+      $('#adminEmailTag').classList.remove('hidden');
+      initApp();
+    } else {
+      $('#appShell').classList.add('hidden');
+      $('#loginScreen').classList.remove('hidden');
+    }
+    lucide.createIcons();
+  });
+}
+
+/* ---------------- NAV / TABS ---------------- */
+const TAB_LABELS = {dashboard:'ড্যাশবোর্ড', orders:'সাইবার ক্যাফে সার্ভিস অর্ডার', shoporders:'কমার্স অর্ডার', printorders:'প্রিন্ট অর্ডার', shopproducts:'শপিং প্রোডাক্ট', customers:'ইউজার / Coin / Voucher', services:'সার্ভিস / প্রোডাক্ট', ads:'বিজ্ঞাপন', settings:'সেটিংস'};
+function switchTab(tab){
+  $$('.tabpanel').forEach(p=>p.classList.remove('active'));
+  $('#tab-'+tab)?.classList.add('active');
+  $$('.navitem').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  $('#pageTitle').textContent = TAB_LABELS[tab] || '';
+  $('#mobNavDrawer').classList.add('hidden');
+}
+document.body.addEventListener('click', (e)=>{
+  const nav = e.target.closest('[data-tab]');
+  if(nav){ switchTab(nav.dataset.tab); }
+  const link = e.target.closest('[data-tab-link]');
+  if(link){ switchTab(link.dataset.tabLink); }
+});
+$('#mobNavBtn').addEventListener('click', ()=>{ $('#mobNavDrawer').classList.remove('hidden'); });
+$('#mobNavBtn2').addEventListener('click', ()=>{ $('#mobNavDrawer').classList.remove('hidden'); });
+$('#mobNavClose').addEventListener('click', ()=>{ $('#mobNavDrawer').classList.add('hidden'); });
+$('#sideNavMobWrap').innerHTML = $('#sideNav').innerHTML;
+
+/* ---------------- MODAL HELPER ---------------- */
+function openModal(html){
+  const bd = $('#modalBackdrop');
+  bd.innerHTML = `<div class="min-h-full grid place-items-center py-8">${html}</div>`;
+  bd.classList.remove('hidden');
+  lucide.createIcons();
+}
+function closeModal(){ $('#modalBackdrop').classList.add('hidden'); $('#modalBackdrop').innerHTML=''; }
+$('#modalBackdrop').addEventListener('click', (e)=>{ if(e.target.id==='modalBackdrop') closeModal(); });
+document.body.addEventListener('click', (e)=>{ if(e.target.closest('[data-close-modal]')) closeModal(); });
+
+let appInited = false;
+function initApp(){
+  if(appInited) return; appInited = true;
+  $('#connState').innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>সংযুক্ত';
+  initOrders();
+  initServices();
+  initAds();
+  sm7LoadProducts(); sm7LoadShopOrders(); sm7LoadPrintOrders(); sm7LoadCustomers();
+}
+
+/* =========================================================================
+   ORDERS / PAYMENTS
+   ========================================================================= */
+let ordersCache = [];
+function initOrders(){
+  const q = query(collection(db,'bookings'), orderBy('createdAt','desc'));
+  onSnapshot(q, (snap)=>{
+    ordersCache = [];
+    snap.forEach(d=> ordersCache.push({id:d.id, ...d.data()}));
+    renderDashboard();
+    renderOrders();
+  }, (err)=>{ console.warn(err); showToast('অর্ডার লোড করা যায়নি - Firestore rules চেক করুন'); });
+}
+
+function filteredOrders(){
+  const s = ($('#orderSearch').value||'').toLowerCase();
+  const st = $('#orderStatusFilter').value;
+  const pm = $('#orderPayFilter').value;
+  return ordersCache.filter(o=>{
+    if(st && o.status!==st) return false;
+    if(pm && o.paymentMethod!==pm) return false;
+    if(s){
+      const hay = [o.reference, o.customer?.name, o.customer?.phone, o.serviceName].join(' ').toLowerCase();
+      if(!hay.includes(s)) return false;
+    }
+    return true;
+  });
+}
+['orderSearch','orderStatusFilter','orderPayFilter'].forEach(id=> $('#'+id).addEventListener('input', renderOrders));
+
+const STATUS_BADGE = {
+  'Received':'bg-amber-100 text-amber-800', 'In Progress':'bg-sky-100 text-sky-800',
+  'Completed':'bg-emerald-100 text-emerald-800', 'Rejected':'bg-red-100 text-red-800'
+};
+function statusBadge(s){ return `<span class="px-2.5 py-1 rounded-full text-[11px] font-semibold ${STATUS_BADGE[s]||'bg-slate-100 text-slate-600'}">${esc(s||'-')}</span>`; }
+
+function renderOrders(){
+  const list = filteredOrders();
+  const tbody = $('#ordersTbody');
+  $('#ordersEmpty').classList.toggle('hidden', list.length>0);
+  tbody.innerHTML = list.map(o=>`
+    <tr class="border-t hover:bg-slate-50">
+      <td class="px-4 py-3 font-mono font-semibold text-[12px]">${esc(o.reference)}</td>
+      <td class="px-4 py-3"><p class="font-medium">${esc(o.customer?.name)}</p><p class="text-[11px] text-slate-400">${esc(o.customer?.phone)}</p></td>
+      <td class="px-4 py-3 max-w-[220px] truncate">${esc(o.serviceName)}</td>
+      <td class="px-4 py-3"><p>${esc(o.paymentMethod)}</p><p class="text-[11px] text-slate-400">${esc(o.paymentStatus)}</p></td>
+      <td class="px-4 py-3">${statusBadge(o.status)}</td>
+      <td class="px-4 py-3 text-[12px] text-slate-500">${fmtDate(o.createdAt)}</td>
+      <td class="px-4 py-3"><button data-view-order="${o.id}" class="text-skyblue font-semibold text-[12px]">বিস্তারিত</button></td>
+    </tr>`).join('');
+}
+
+document.body.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-view-order]');
+  if(btn) openOrderDetail(btn.dataset.viewOrder);
+});
+
+function openOrderDetail(id){
+  const o = ordersCache.find(x=>x.id===id);
+  if(!o) return;
+  const docsHtml = (o.documents||[]).length
+    ? o.documents.map((d,i)=>{
+        const href = d.data || d.url || '#';
+        const isBase64 = !!d.data;
+        return `<div class="flex items-center justify-between bg-slate-50 border rounded-xl px-3 py-2 text-[12px]">
+          <span class="truncate flex-1">${esc(d.name)} <span class="text-[10px] text-slate-400 ml-1">${d.type?esc(d.type):''} ${(d.size/1024).toFixed(0)}KB</span></span>
+          <div class="flex gap-1.5 ml-2">
+            <a href="${href}" target="_blank" class="w-8 h-8 grid place-items-center rounded-full bg-white border hover:bg-slate-100" title="খুলে দেখুন"><i data-lucide="eye" class="w-3.5 h-3.5"></i></a>
+            <a href="${href}" download="${esc(d.name)}" class="w-8 h-8 grid place-items-center rounded-full bg-navy text-white hover:bg-black" title="ডাউনলোড"><i data-lucide="download" class="w-3.5 h-3.5"></i></a>
+          </div>
+        </div>`;
+      }).join('')
+    : '<p class="text-[12px] text-slate-400">কোনো ডকুমেন্ট আপলোড হয়নি</p>';
+  const historyHtml = (o.statusHistory||[]).slice().reverse().map(h=>`
+    <div class="border-l-2 border-skyblue pl-3 py-1">
+      <p class="font-semibold text-[12px]">${esc(h.status)}</p>
+      <p class="text-[11px] text-slate-400">${h.at ? new Date(h.at).toLocaleString('bn-IN') : ''} ${h.note?'- '+esc(h.note):''}</p>
+    </div>`).join('');
+
+  openModal(`
+  <div class="bg-white rounded-[22px] w-full max-w-[640px] max-h-[90vh] overflow-y-auto">
+    <div class="p-5 border-b flex items-center justify-between sticky top-0 bg-white">
+      <div><p class="font-mono font-bold text-[15px] text-navy">${esc(o.reference)}</p><p class="text-[12px] text-slate-400">${fmtDate(o.createdAt)}</p></div>
+      <button data-close-modal class="w-9 h-9 grid place-items-center rounded-full bg-slate-100"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div class="p-5 space-y-5">
+      <div class="grid grid-cols-2 gap-3 text-[13px]">
+        <div><p class="text-[11px] text-slate-400">নাম</p><p class="font-medium">${esc(o.customer?.name)}</p></div>
+        <div><p class="text-[11px] text-slate-400">মোবাইল</p><p class="font-medium">${esc(o.customer?.phone)}</p></div>
+        <div><p class="text-[11px] text-slate-400">ইমেইল</p><p class="font-medium">${esc(o.customer?.email)||'-'}</p></div>
+        <div><p class="text-[11px] text-slate-400">সার্ভিস</p><p class="font-medium">${esc(o.serviceName)}</p></div>
+        <div class="col-span-2"><p class="text-[11px] text-slate-400">ঠিকানা</p><p class="font-medium">${esc(o.customer?.address)}</p></div>
+        <div class="col-span-2"><p class="text-[11px] text-slate-400">কাজের বিস্তারিত</p><p class="font-medium">${esc(o.details)||'-'}</p></div>
+      </div>
+
+      <div>
+        <p class="text-[12px] font-semibold text-slate-500 mb-2">ডকুমেন্ট</p>
+        <div class="space-y-1.5">${docsHtml}</div>
+      </div>
+
+      <div class="bg-slate-50 rounded-xl p-4 grid grid-cols-2 gap-3 text-[13px]">
+        <div><p class="text-[11px] text-slate-400">পেমেন্ট পদ্ধতি</p><p class="font-medium">${esc(o.paymentMethod)}</p></div>
+        <div><p class="text-[11px] text-slate-400">Transaction ID</p><p class="font-medium font-mono">${esc(o.transactionId)||'-'}</p></div>
+      </div>
+
+      <form id="orderUpdateForm" class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[12px] font-medium text-slate-600">কাজের Status</label>
+            <select id="ordStatusSel" class="mt-1 w-full rounded-xl px-3 py-2.5 border bg-white outline-none text-[13px]">
+              ${['Received','In Progress','Completed','Rejected'].map(s=>`<option value="${s}" ${o.status===s?'selected':''}>${s}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="text-[12px] font-medium text-slate-600">পেমেন্ট Status</label>
+            <select id="ordPaySel" class="mt-1 w-full rounded-xl px-3 py-2.5 border bg-white outline-none text-[13px]">
+              ${['Pending Verification','Verified','Pay at Shop','Paid'].map(s=>`<option value="${s}" ${o.paymentStatus===s?'selected':''}>${s}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div id="rejectReasonWrap" class="${o.status==='Rejected'?'':'hidden'}">
+          <label class="text-[12px] font-medium text-slate-600">বাতিলের কারণ</label>
+          <input id="ordRejectReason" value="${esc(o.rejectionReason)||''}" class="mt-1 w-full rounded-xl px-3 py-2.5 border bg-white outline-none text-[13px]" placeholder="কারণ লিখুন"/>
+        </div>
+        <div>
+          <label class="text-[12px] font-medium text-slate-600">নোট (কাস্টমার ট্র্যাকিং-এ দেখাবে)</label>
+          <input id="ordNote" class="mt-1 w-full rounded-xl px-3 py-2.5 border bg-white outline-none text-[13px]" placeholder="যেমন: ডকুমেন্ট ভেরিফিকেশন চলছে"/>
+        </div>
+        <div class="flex gap-2 pt-1">
+          <button type="submit" class="flex-1 bg-navy text-white py-3 rounded-full font-semibold text-[13px]">আপডেট সেভ করুন</button>
+          <button type="button" data-delete-order="${o.id}" class="px-4 py-3 rounded-full border border-red-200 text-red-600 text-[13px] font-semibold">ডিলিট</button>
+        </div>
+      </form>
+
+      <div>
+        <p class="text-[12px] font-semibold text-slate-500 mb-2">Status ইতিহাস</p>
+        <div class="space-y-1">${historyHtml || '<p class="text-[12px] text-slate-400">কোনো ইতিহাস নেই</p>'}</div>
+      </div>
+    </div>
+  </div>`);
+
+  $('#ordStatusSel').addEventListener('change', (e)=>{
+    $('#rejectReasonWrap').classList.toggle('hidden', e.target.value!=='Rejected');
+  });
+
+  $('#orderUpdateForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const newStatus = $('#ordStatusSel').value;
+    const newPay = $('#ordPaySel').value;
+    const note = $('#ordNote').value.trim();
+    const rejectionReason = newStatus==='Rejected' ? $('#ordRejectReason').value.trim() : '';
+    const nowIso = new Date().toISOString();
+    const historyEntry = {status:newStatus, note: note || (newStatus!==o.status? 'Status updated':'Payment updated'), at: nowIso};
+    const newHistory = [...(o.statusHistory||[]), historyEntry];
+    try{
+      await updateDoc(doc(db,'bookings',o.id), {
+        status: newStatus, paymentStatus: newPay, rejectionReason,
+        statusHistory: newHistory, updatedAt: serverTimestamp()
+      });
+      // sync public tracking doc (matched by reference)
+      const tq = query(collection(db,'tracking'), where('reference','==',o.reference));
+      const tsnap = await getDocs(tq);
+      const trackPayload = {reference:o.reference, serviceName:o.serviceName, status:newStatus, paymentMethod:o.paymentMethod, paymentStatus:newPay, rejectionReason, statusHistory:newHistory, updatedAt: nowIso};
+      if(!tsnap.empty){
+        await updateDoc(doc(db,'tracking',tsnap.docs[0].id), trackPayload);
+      } else {
+        await addDoc(collection(db,'tracking'), {...trackPayload, createdAt: nowIso});
+      }
+      showToast('আপডেট সেভ হয়েছে');
+      closeModal();
+    }catch(err){ console.error(err); showToast('সেভ করা যায়নি'); }
+  });
+
+  document.querySelector('[data-delete-order]')?.addEventListener('click', async (e)=>{
+    if(!confirm('এই অর্ডারটি ডিলিট করতে চান?')) return;
+    try{
+      await deleteDoc(doc(db,'bookings',o.id));
+      showToast('অর্ডার ডিলিট হয়েছে');
+      closeModal();
+    }catch(err){ console.error(err); showToast('ডিলিট ব্যর্থ'); }
+  });
+}
+
+$('#orderExportBtn').addEventListener('click', ()=>{
+  const list = filteredOrders();
+  if(!list.length){ showToast('এক্সপোর্ট করার মতো অর্ডার নেই'); return; }
+  const rows = [['Reference','Name','Phone','Email','Address','Service','PaymentMethod','TxnId','PaymentStatus','Status','CreatedAt']];
+  list.forEach(o=> rows.push([o.reference,o.customer?.name,o.customer?.phone,o.customer?.email,o.customer?.address,o.serviceName,o.paymentMethod,o.transactionId,o.paymentStatus,o.status, fmtDate(o.createdAt)]));
+  const csv = rows.map(r=> r.map(v=>`"${(v??'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = `sm7-orders-${Date.now()}.csv`; a.click();
+});
+
+/* ---------------- DASHBOARD ---------------- */
+let weekChartRef, payChartRef;
+function renderDashboard(){
+  const total = ordersCache.length;
+  const count = s => ordersCache.filter(o=>o.status===s).length;
+  $('#statTotal').textContent = total;
+  $('#statReceived').textContent = count('Received');
+  $('#statProgress').textContent = count('In Progress');
+  $('#statDone').textContent = count('Completed');
+  $('#statRejected').textContent = count('Rejected');
+
+  // last 7 days
+  const days = [];
+  for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); days.push(d); }
+  const dayLabels = days.map(d=> d.toLocaleDateString('bn-IN',{day:'2-digit',month:'short'}));
+  const dayCounts = days.map(d=>{
+    const key = d.toDateString();
+    return ordersCache.filter(o=>{
+      const cd = o.createdAt && o.createdAt.toDate ? o.createdAt.toDate() : (o.createdAt? new Date(o.createdAt): null);
+      return cd && cd.toDateString()===key;
+    }).length;
+  });
+  if(weekChartRef) weekChartRef.destroy();
+  weekChartRef = new Chart($('#weekChart'), {
+    type:'bar',
+    data:{ labels: dayLabels, datasets:[{label:'অর্ডার', data: dayCounts, backgroundColor:'#13B9F3', borderRadius:6}] },
+    options:{ plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true, ticks:{precision:0}} } }
+  });
+
+  const upiCount = ordersCache.filter(o=>o.paymentMethod==='UPI').length;
+  const cashCount = ordersCache.filter(o=>o.paymentMethod==='Cash').length;
+  if(payChartRef) payChartRef.destroy();
+  payChartRef = new Chart($('#payChart'), {
+    type:'doughnut',
+    data:{ labels:['UPI','Cash'], datasets:[{data:[upiCount,cashCount], backgroundColor:['#06132F','#C9F500']}] },
+    options:{ plugins:{legend:{position:'bottom', labels:{boxWidth:10, font:{size:11}}}} }
+  });
+
+  const recent = ordersCache.slice(0,5);
+  $('#recentOrdersWrap').innerHTML = recent.length ? `
+    <table class="w-full text-[13px]">
+      <tbody>
+      ${recent.map(o=>`<tr class="border-t">
+        <td class="py-2.5 pr-3 font-mono text-[12px] font-semibold">${esc(o.reference)}</td>
+        <td class="py-2.5 pr-3">${esc(o.customer?.name)}</td>
+        <td class="py-2.5 pr-3 max-w-[180px] truncate">${esc(o.serviceName)}</td>
+        <td class="py-2.5 pr-3">${statusBadge(o.status)}</td>
+        <td class="py-2.5 text-slate-400 text-[12px]">${fmtDate(o.createdAt)}</td>
+      </tr>`).join('')}
+      </tbody>
+    </table>` : `<p class="text-[13px] text-slate-400 py-6 text-center">এখনো কোনো অর্ডার আসেনি</p>`;
+}
+
+/* =========================================================================
+   SERVICES
+   ========================================================================= */
+const DEFAULT_SERVICES = [
+ {name:"প্যান কার্ড (নতুন/সংশোধন)",desc:"নতুন PAN বা তথ্য সংশোধন আবেদন",icon:"id-card",order:1},
+ {name:"ভোটার কার্ড (নতুন/সংশোধন)",desc:"নতুন Voter ID বা সংশোধন",icon:"vote",order:2},
+ {name:"রেশন কার্ড (নতুন/সংশোধন)",desc:"Ration Card নতুন/সংশোধন",icon:"shopping-basket",order:3},
+ {name:"পাসপোর্ট",desc:"Passport নতুন আবেদন ও সহায়তা",icon:"book",order:4},
+ {name:"ড্রাইভিং লাইসেন্স",desc:"Driving Licence আবেদন",icon:"car",order:5},
+ {name:"অন্যের নামে গাড়ি চালানোর জন্য অনুমোদন সার্টিফিকেট",desc:"Authorization certificate",icon:"file-check",order:6},
+ {name:"ইলেকট্রিক মিটারের লোড বাড়ানো",desc:"Load increase আবেদন",icon:"zap",order:7},
+ {name:"আধার কার্ড",desc:"Aadhaar সংক্রান্ত পরিষেবা",icon:"fingerprint",order:8},
+ {name:"ইশ্রম কার্ড (Eshrm card)",desc:"E-Shram Card registration",icon:"briefcase",order:9},
+ {name:"পাসপোর্ট ফটো",desc:"Passport size photo printing",icon:"camera",order:10},
+ {name:"ডিজিটাল ফটো",desc:"High quality digital photo",icon:"image",order:11},
+ {name:"বিডিও- এর ইনকাম সার্টিফিকেট, বাসিন্দা সার্টিফিকেট, Domicile Certificate ইত্যাদি",desc:"BDO certificates",icon:"file-text",order:12},
+ {name:"পঞ্চায়েত- এর ইনকাম সার্টিফিকেট, বাসিন্দা সার্টিফিকেট ইত্যাদি",desc:"Panchayat certificates",icon:"scroll",order:13},
+ {name:"রেল, বাস ও বিমানের টিকিট",desc:"Ticket booking service",icon:"ticket",order:14},
+ {name:"হোটেল বুকিং",desc:"Hotel booking",icon:"hotel",order:15},
+ {name:"স্কলারশিপের ফর্ম ফিলাপ",desc:"Scholarship form fillup",icon:"graduation-cap",order:16},
+ {name:"স্কুল, কলেজের ফর্ম ফিলাপ",desc:"School/College forms",icon:"school",order:17},
+ {name:"বিভিন্ন চাকরির পরীক্ষার ফর্ম ফিলাপ",desc:"Job exam forms",icon:"briefcase",order:18},
+ {name:"OBC/SC/ST/EWS Certificate এর জন্য আবেদন",desc:"Caste certificate apply",icon:"badge",order:19},
+ {name:"কেন্দ্র ও রাজ্যের বিভিন্ন প্রকল্পের আবেদন",desc:"Govt schemes apply",icon:"landmark",order:20},
+ {name:"Udyam Registration",desc:"MSME Udyam registration",icon:"building",order:21},
+ {name:"ট্রেড লাইসেন্স",desc:"Trade license apply",icon:"store",order:22},
+ {name:"যেকোনো ব্যাংকের টাকা তোলা ও জমা",desc:"Bank cash deposit/withdrawal",icon:"wallet",order:23},
+ {name:"ট্র্যাফিক চালান চেক ও জমা",desc:"Traffic challan check/pay",icon:"shield",order:24},
+ {name:"LPG গ্যাসের Ekyc",desc:"LPG eKYC",icon:"flame",order:25},
+ {name:"ব্যাংকের DBT Link",desc:"DBT link with bank",icon:"link",order:26},
+ {name:"বিভিন্ন সার্টিফিকেট প্রস্তুত (High Quality পেপার)",desc:"High quality certificate printing",icon:"printer",order:27},
+];
+
+let servicesCache = [];
+function initServices(){
+  const q = query(collection(db,'services'), orderBy('order','asc'));
+  onSnapshot(q, (snap)=>{
+    servicesCache = [];
+    snap.forEach(d=> servicesCache.push({id:d.id, ...d.data()}));
+    renderServicesAdmin();
+  }, (err)=>{ console.warn(err); showToast('সার্ভিস লোড করা যায়নি'); });
+}
+
+function renderServicesAdmin(){
+  const wrap = $('#servicesGridAdmin');
+  $('#servicesEmptyAdmin').classList.toggle('hidden', servicesCache.length>0);
+  wrap.innerHTML = servicesCache.map(s=>`
+    <div class="bg-white border rounded-2xl p-4 ${s.active===false?'opacity-50':''}">
+      <div class="flex items-start justify-between">
+        <div class="w-10 h-10 rounded-full bg-[#E6F9FF] text-skyblue grid place-items-center"><i data-lucide="${esc(s.icon)||'file-text'}" class="w-5 h-5"></i></div>
+        <span class="text-[11px] text-slate-400">#${esc(s.order??'-')}</span>
+      </div>
+      <p class="mt-3 font-semibold text-[14px] leading-tight line-clamp-2">${esc(s.name)}</p>
+      <p class="mt-1 text-[12px] text-slate-500 line-clamp-2">${esc(s.desc)||''}</p>
+      <div class="mt-3 flex items-center justify-between">
+        <span class="text-[11px] px-2 py-1 rounded-full ${s.active===false?'bg-slate-100 text-slate-500':'bg-emerald-100 text-emerald-700'}">${s.active===false?'নিষ্ক্রিয়':'সক্রিয়'}</span>
+        <div class="flex gap-1.5">
+          <button data-edit-service="${s.id}" class="w-8 h-8 grid place-items-center rounded-full bg-slate-100"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+          <button data-toggle-service="${s.id}" class="w-8 h-8 grid place-items-center rounded-full bg-slate-100"><i data-lucide="${s.active===false?'eye':'eye-off'}" class="w-3.5 h-3.5"></i></button>
+          <button data-delete-service="${s.id}" class="w-8 h-8 grid place-items-center rounded-full bg-red-50 text-red-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        </div>
+      </div>
+    </div>`).join('');
+  lucide.createIcons();
+}
+
+function serviceFormModal(existing){
+  const s = existing || {name:'',desc:'',icon:'file-text',order:(servicesCache.length?Math.max(...servicesCache.map(x=>x.order||0))+1:1),active:true};
+  openModal(`
+  <div class="bg-white rounded-[22px] w-full max-w-[480px]">
+    <div class="p-5 border-b flex items-center justify-between">
+      <p class="font-bold text-navy">${existing?'সার্ভিস এডিট করুন':'নতুন সার্ভিস যুক্ত করুন'}</p>
+      <button data-close-modal class="w-9 h-9 grid place-items-center rounded-full bg-slate-100"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <form id="serviceForm" class="p-5 space-y-3">
+      <div><label class="text-[12px] font-medium text-slate-600">সার্ভিসের নাম *</label><input id="svName" required value="${esc(s.name)}" class="mt-1 w-full rounded-xl px-3 py-2.5 border outline-none text-[13px]"/></div>
+      <div><label class="text-[12px] font-medium text-slate-600">বিস্তারিত</label><input id="svDesc" value="${esc(s.desc)}" class="mt-1 w-full rounded-xl px-3 py-2.5 border outline-none text-[13px]"/></div>
+      <div><label class="text-[12px] font-medium text-slate-600">সার্ভিসের ছবি URL (ঐচ্ছিক)</label><input id="svImageUrl" type="url" value="${esc(s.imageUrl||'')}" placeholder="https://.../service.jpg" class="mt-1 w-full rounded-xl px-3 py-2.5 border outline-none text-[13px]"/><p class="text-[11px] text-slate-400 mt-1">ছবি না দিলে Lucide icon দেখা যাবে।</p></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-[12px] font-medium text-slate-600">Icon (lucide নাম)</label><input id="svIcon" value="${esc(s.icon)}" class="mt-1 w-full rounded-xl px-3 py-2.5 border outline-none text-[13px]" placeholder="file-text"/></div>
+        <div><label class="text-[12px] font-medium text-slate-600">ক্রম নম্বর</label><input id="svOrder" type="number" value="${esc(s.order)}" class="mt-1 w-full rounded-xl px-3 py-2.5 border outline-none text-[13px]"/></div>
+      </div>
+      <label class="flex items-center gap-2 text-[13px] pt-1"><input id="svActive" type="checkbox" ${s.active!==false?'checked':''} class="w-4 h-4"/>কাস্টমার সাইটে সক্রিয় থাকবে</label>
+      <p class="text-[11px] text-slate-400">Icon নামের তালিকা lucide.dev/icons এ পাবেন (যেমন: id-card, camera, briefcase)</p>
+      <button type="submit" class="w-full bg-navy text-white py-3 rounded-full font-semibold text-[13px] mt-2">সেভ করুন</button>
+    </form>
+  </div>`);
+
+  $('#serviceForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const payload = {
+      name: $('#svName').value.trim(),
+      desc: $('#svDesc').value.trim(),
+      imageUrl: $('#svImageUrl').value.trim(),
+      icon: $('#svIcon').value.trim() || 'file-text',
+      order: parseInt($('#svOrder').value) || 0,
+      active: $('#svActive').checked,
+    };
+    if(!payload.name){ showToast('সার্ভিসের নাম দিন'); return; }
+    try{
+      if(existing){ await updateDoc(doc(db,'services',existing.id), payload); }
+      else { await addDoc(collection(db,'services'), {...payload, createdAt: serverTimestamp()}); }
+      showToast('সেভ হয়েছে'); closeModal();
+    }catch(err){ console.error(err); showToast('সেভ ব্যর্থ'); }
+  });
+}
+
+$('#addServiceBtn').addEventListener('click', ()=> serviceFormModal(null));
+document.body.addEventListener('click', async (e)=>{
+  const editBtn = e.target.closest('[data-edit-service]');
+  if(editBtn){ serviceFormModal(servicesCache.find(s=>s.id===editBtn.dataset.editService)); }
+  const toggleBtn = e.target.closest('[data-toggle-service]');
+  if(toggleBtn){
+    const s = servicesCache.find(x=>x.id===toggleBtn.dataset.toggleService);
+    if(s){ try{ await updateDoc(doc(db,'services',s.id), {active: s.active===false}); }catch(err){ showToast('আপডেট ব্যর্থ'); } }
+  }
+  const delBtn = e.target.closest('[data-delete-service]');
+  if(delBtn){
+    if(!confirm('এই সার্ভিসটি স্থায়ীভাবে ডিলিট করতে চান?')) return;
+    try{ await deleteDoc(doc(db,'services',delBtn.dataset.deleteService)); showToast('ডিলিট হয়েছে'); }catch(err){ showToast('ডিলিট ব্যর্থ'); }
+  }
+});
+
+$('#seedServicesBtn').addEventListener('click', async ()=>{
+  if(servicesCache.length>0){
+    if(!confirm('ইতিমধ্যে সার্ভিস তালিকায় ডেটা আছে। ডিফল্ট ২৭টি সার্ভিস আবার যুক্ত করতে চান? (ডুপ্লিকেট হতে পারে)')) return;
+  }
+  try{
+    const batch = writeBatch(db);
+    DEFAULT_SERVICES.forEach(s=>{
+      const ref = doc(collection(db,'services'));
+      batch.set(ref, {...s, active:true, createdAt: serverTimestamp()});
+    });
+    await batch.commit();
+    showToast('ডিফল্ট সার্ভিস যুক্ত হয়েছে');
+  }catch(err){ console.error(err); showToast('যুক্ত করা ব্যর্থ'); }
+});
+
+/* =========================================================================
+   ADS
+   ========================================================================= */
+const AD_POSITIONS = {
+  hero_bottom: 'হিরো সেকশনের নিচে',
+  services_top: 'সার্ভিস সেকশনের উপরে',
+  footer_top: 'ফুটারের উপরে',
+};
+
+let adsCache = [];
+function initAds(){
+  const q = query(collection(db,'ads'), orderBy('order','asc'));
+  onSnapshot(q, (snap)=>{
+    adsCache = [];
+    snap.forEach(d=> adsCache.push({id:d.id, ...d.data()}));
+    renderAds();
+  }, (err)=>{ console.warn(err); showToast('বিজ্ঞাপন লোড করা যায়নি'); });
+}
+
+function renderAds(){
+  $('#adsEmpty').classList.toggle('hidden', adsCache.length>0);
+  $('#adsGrid').innerHTML = adsCache.map(a=>`
+    <div class="bg-white border rounded-2xl overflow-hidden ${a.active===false?'opacity-50':''}">
+      <div class="h-[120px] bg-slate-100">${a.imageUrl?`<img src="${esc(a.imageUrl)}" class="w-full h-full object-cover"/>`:`<div class="h-full grid place-items-center text-slate-300"><i data-lucide="image" class="w-6 h-6"></i></div>`}</div>
+      <div class="p-3">
+        <p class="font-semibold text-[13px] truncate">${esc(a.title)||'শিরোনামহীন'}</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">${esc(AD_POSITIONS[a.position]||a.position||'-')} • ক্রম #${esc(a.order??'-')}</p>
+        <div class="mt-2.5 flex items-center justify-between">
+          <span class="text-[11px] px-2 py-1 rounded-full ${a.active===false?'bg-slate-100 text-slate-500':'bg-emerald-100 text-emerald-700'}">${a.active===false?'নিষ্ক্রিয়':'সক্রিয়'}</span>
+          <div class="flex gap-1.5">
+            <button data-edit-ad="${a.id}" class="w-8 h-8 grid place-items-center rounded-full bg-slate-100"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+            <button data-toggle-ad="${a.id}" class="w-8 h-8 grid place-items-center rounded-full bg-slate-100"><i data-lucide="${a.active===false?'eye':'eye-off'}" class="w-3.5 h-3.5"></i></button>
+            <button data-delete-ad="${a.id}" class="w-8 h-8 grid place-items-center rounded-full bg-red-50 text-red-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+  lucide.createIcons();
+}
+
+function adFormModal(existing){
+  const a = existing || {title:'',imageUrl:'',linkUrl:'',position:'hero_bottom',order:(adsCache.length?Math.max(...adsCache.map(x=>x.order||0))+1:1),active:true};
+  openModal(`
+  <div class="bg-white rounded-[22px] w-full max-w-[480px]">
+    <div class="p-5 border-b flex items-center justify-between">
+      <p class="font-bold text-navy">${existing?'বিজ্ঞাপন এডিট করুন':'নতুন বিজ্ঞাপন যুক্ত করুন'}</p>
+      <button data-close-modal class="w-9 h-9 grid place-items-center rounded-full bg-slate-100"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <form id="adForm" class="p-5 space-y-3">
+      <div><label class="text-[12px] font-medium text-slate-600">শিরোনাম</label><input id="adTitle" value="${esc(a.title)}" class="mt-1 w-full rounded-xl px-3 py-2.5 border outline-none text-[13px]" placeholder="যেমন: নতুন অফার"/></div>
+      <div>
+        <label class="text-[12px] font-medium text-slate-600">বিজ্ঞাপনের ছবি</label>
+        <input id="adImageFile" type="file" accept="image/*" class="mt-1 w-full text-[12px]"/>
+        <input id="adImageUrl" value="${esc(a.imageUrl)}" class="mt-2 w-full rounded-xl px-3 py-2.5 border outline-none text-[13px]" placeholder="বা সরাসরি Image URL পেস্ট করুন"/>
+      </div>
+      <div><label class="text-[12px] font-medium text-slate-600">ক্লিক করলে যে লিংকে যাবে</label><input id="adLink" value="${esc(a.linkUrl)}" class="mt-1 w-full rounded-xl px-3 py-2.5 border outline-none text-[13px]" placeholder="https://wa.me/918101384127"/></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-[12px] font-medium text-slate-600">কোথায় দেখাবে</label>
+          <select id="adPosition" class="mt-1 w-full rounded-xl px-3 py-2.5 border outline-none text-[13px]">
+            ${Object.entries(AD_POSITIONS).map(([k,v])=>`<option value="${k}" ${a.position===k?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div><label class="text-[12px] font-medium text-slate-600">ক্রম নম্বর</label><input id="adOrder" type="number" value="${esc(a.order)}" class="mt-1 w-full rounded-xl px-3 py-2.5 border outline-none text-[13px]"/></div>
+      </div>
+      <label class="flex items-center gap-2 text-[13px] pt-1"><input id="adActive" type="checkbox" ${a.active!==false?'checked':''} class="w-4 h-4"/>কাস্টমার সাইটে সক্রিয় থাকবে</label>
+      <button type="submit" class="w-full bg-navy text-white py-3 rounded-full font-semibold text-[13px] mt-2">সেভ করুন</button>
+    </form>
+  </div>`);
+
+  $('#adForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const submitBtn = e.target.querySelector('button[type=submit]');
+    submitBtn.disabled = true; submitBtn.textContent = 'সেভ হচ্ছে...';
+    try{
+      let imageUrl = $('#adImageUrl').value.trim();
+      const file = $('#adImageFile').files[0];
+      if(file){
+        // storage disabled - using base64
+        // NO STORAGE: convert ad image to base64
+        imageUrl = await new Promise((res,rej)=>{
+          const reader = new FileReader();
+          reader.onload = () => res(reader.result);
+          reader.onerror = rej;
+          reader.readAsDataURL(file);
+        });
+      }
+      const payload = {
+        title: $('#adTitle').value.trim(),
+        imageUrl,
+        linkUrl: $('#adLink').value.trim(),
+        position: $('#adPosition').value,
+        order: parseInt($('#adOrder').value) || 0,
+        active: $('#adActive').checked,
+      };
+      if(existing){ await updateDoc(doc(db,'ads',existing.id), payload); }
+      else { await addDoc(collection(db,'ads'), {...payload, createdAt: serverTimestamp()}); }
+      showToast('সেভ হয়েছে'); closeModal();
+    }catch(err){ console.error(err); showToast('সেভ ব্যর্থ'); }
+    finally{ submitBtn.disabled = false; submitBtn.textContent = 'সেভ করুন'; }
+  });
+}
+
+$('#addAdBtn').addEventListener('click', ()=> adFormModal(null));
+document.body.addEventListener('click', async (e)=>{
+  const editBtn = e.target.closest('[data-edit-ad]');
+  if(editBtn){ adFormModal(adsCache.find(a=>a.id===editBtn.dataset.editAd)); }
+  const toggleBtn = e.target.closest('[data-toggle-ad]');
+  if(toggleBtn){
+    const a = adsCache.find(x=>x.id===toggleBtn.dataset.toggleAd);
+    if(a){ try{ await updateDoc(doc(db,'ads',a.id), {active: a.active===false}); }catch(err){ showToast('আপডেট ব্যর্থ'); } }
+  }
+  const delBtn = e.target.closest('[data-delete-ad]');
+  if(delBtn){
+    if(!confirm('এই বিজ্ঞাপনটি ডিলিট করতে চান?')) return;
+    try{ await deleteDoc(doc(db,'ads',delBtn.dataset.deleteAd)); showToast('ডিলিট হয়েছে'); }catch(err){ showToast('ডিলিট ব্যর্থ'); }
+  }
+});
+
+
+/* ================= SM7 COMMERCE + PRINT + REWARDS ADD-ON ================= */
+const sm7Stamp=()=>serverTimestamp();
+const sm7Safe=(v)=>esc(v==null?'':String(v));
+const sm7Date=(v)=>{try{const d=v?.toDate?v.toDate():new Date(v);return isNaN(d)?'-':d.toLocaleString('bn-IN')}catch(_){return '-'}};
+let shopProductsCache=[];
+async function sm7LoadProducts(){try{const s=await getDocs(query(collection(db,'shopProducts'),orderBy('createdAt','desc')));shopProductsCache=s.docs.map(x=>({id:x.id,...x.data()}));const box=$('#shopProductsList');if(!shopProductsCache.length){box.innerHTML='<p class="sm7-muted">এখনও কোনো প্রোডাক্ট নেই। “প্রোডাক্ট যোগ করুন” চাপুন।</p>';return}box.innerHTML=shopProductsCache.map(p=>`<article class="border rounded-2xl overflow-hidden bg-white"><div class="h-40 bg-slate-100">${p.imageUrl?`<img src="${sm7Safe(p.imageUrl)}" alt="" class="w-full h-full object-cover" loading="lazy">`:'<div class="h-full grid place-items-center text-slate-400">No image URL</div>'}</div><div class="p-4"><div class="flex justify-between gap-2"><h3 class="font-bold">${sm7Safe(p.name)}</h3><span class="text-xs rounded-full px-2 py-1 ${Number(p.stock)>0?'bg-emerald-50 text-emerald-700':'bg-red-50 text-red-700'}">${Number(p.stock)>0?'স্টক '+Number(p.stock):'Out of Stock'}</span></div><p class="text-sm text-slate-500 mt-1 line-clamp-2">${sm7Safe(p.description)}</p><p class="mt-2 font-bold">₹${sm7Safe(p.price)} <span class="text-xs text-slate-400 line-through">${p.mrp?'₹'+sm7Safe(p.mrp):''}</span></p><p class="text-xs text-slate-500 mt-1">ভিডিও: ${p.videoUrl?'যুক্ত আছে':'নেই'} • ${p.active===false?'Inactive':'Active'}</p><div class="flex gap-2 mt-3"><button class="sm7-btn bg-slate-100 text-navy flex-1" data-sm7-edit-product="${p.id}">Edit</button><button class="sm7-btn bg-slate-100 text-navy" data-sm7-stock="${p.id}">Stock</button><button class="sm7-btn bg-red-50 text-red-700" data-sm7-del-product="${p.id}">Delete</button></div></div></article>`).join('')}catch(e){console.error(e);$('#shopProductsList').innerHTML='<p class="text-red-600 text-sm">প্রোডাক্ট লোড করা যায়নি। Firestore Rules পরীক্ষা করুন।</p>'}}
+function sm7ProductForm(p={}){openModal(`<form id="sm7ProductForm" class="bg-white w-full max-w-2xl rounded-3xl p-5 md:p-7"><div class="flex justify-between items-center"><h2 class="text-xl font-bold">${p.id?'প্রোডাক্ট এডিট':'নতুন প্রোডাক্ট'}</h2><button type="button" data-close-modal class="text-2xl">×</button></div><div class="grid sm:grid-cols-2 gap-3 mt-5"><label class="text-sm">Product Name<input name="name" required class="sm7-field mt-1" value="${sm7Safe(p.name)}"></label><label class="text-sm">Price (₹)<input name="price" type="number" min="0" step="0.01" required class="sm7-field mt-1" value="${sm7Safe(p.price)}"></label><label class="text-sm">MRP (₹)<input name="mrp" type="number" min="0" step="0.01" class="sm7-field mt-1" value="${sm7Safe(p.mrp)}"></label><label class="text-sm">Discount %<input name="discountPercent" type="number" min="0" max="100" class="sm7-field mt-1" value="${sm7Safe(p.discountPercent||0)}"></label><label class="text-sm">Stock Quantity<input name="stock" type="number" min="0" required class="sm7-field mt-1" value="${sm7Safe(p.stock??0)}"></label><label class="text-sm">Main Image URL<input name="imageUrl" type="url" class="sm7-field mt-1" placeholder="https://..." value="${sm7Safe(p.imageUrl)}"></label><label class="text-sm sm:col-span-2">Extra Image URLs (এক লাইনে একটি)<textarea name="imageUrls" rows="2" class="sm7-field mt-1">${sm7Safe((p.imageUrls||[]).join('\n'))}</textarea></label><label class="text-sm sm:col-span-2">Google Drive Video Share Link<input name="videoUrl" type="url" class="sm7-field mt-1" value="${sm7Safe(p.videoUrl)}" placeholder="Drive share link"></label><label class="text-sm sm:col-span-2">Description<textarea name="description" rows="3" class="sm7-field mt-1">${sm7Safe(p.description)}</textarea></label><label class="sm:col-span-2 flex items-center gap-2 text-sm"><input name="active" type="checkbox" ${p.active===false?'':'checked'}> প্রোডাক্ট সক্রিয় রাখুন</label></div><div class="flex gap-2 mt-5"><button class="sm7-btn bg-navy text-white flex-1" type="submit">সেভ করুন</button><button type="button" data-close-modal class="sm7-btn bg-slate-100">বন্ধ</button></div></form>`);$('#sm7ProductForm').addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const payload={name:String(f.get('name')).trim(),price:Number(f.get('price')||0),mrp:Number(f.get('mrp')||0),discountPercent:Number(f.get('discountPercent')||0),stock:Math.max(0,Number(f.get('stock')||0)),imageUrl:String(f.get('imageUrl')||'').trim(),imageUrls:String(f.get('imageUrls')||'').split(/\n/).map(x=>x.trim()).filter(Boolean),videoUrl:String(f.get('videoUrl')||'').trim(),description:String(f.get('description')||'').trim(),active:f.get('active')==='on',updatedAt:sm7Stamp()};try{if(p.id)await updateDoc(doc(db,'shopProducts',p.id),payload);else await addDoc(collection(db,'shopProducts'),{...payload,createdAt:sm7Stamp()});closeModal();showToast('প্রোডাক্ট সেভ হয়েছে');sm7LoadProducts()}catch(err){console.error(err);showToast('সেভ হয়নি: Rules/connection পরীক্ষা করুন')}})}
+async function sm7LoadShopOrders(){const box=$('#shopOrdersList');try{const s=await getDocs(query(collection(db,'shopOrders'),orderBy('createdAt','desc')));const rows=s.docs.map(d=>({id:d.id,...d.data()}));box.innerHTML=rows.length?rows.map(o=>`<article class="border rounded-2xl p-4 bg-white"><div class="flex flex-wrap justify-between gap-2"><div><b>${sm7Safe(o.reference||o.id)}</b><p class="text-sm mt-1">${sm7Safe(o.customer?.name)} • ${sm7Safe(o.customer?.phone)}</p><p class="text-sm text-slate-500">${sm7Safe(o.productName||o.items?.map(i=>i.name).join(', '))} • Qty ${sm7Safe(o.quantity||1)}</p><p class="text-xs text-slate-500 mt-1">${sm7Date(o.createdAt)} • ₹${sm7Safe(o.total||o.price||0)} • ${sm7Safe(o.paymentStatus||'Payment pending')}</p></div><div class="flex flex-wrap gap-2 items-start"><select data-sm7-order-status="${o.id}" class="sm7-field !w-auto !py-2"><option ${o.status==='Received'?'selected':''}>Received</option><option ${o.status==='Processing'?'selected':''}>Processing</option><option ${o.status==='Shipped'?'selected':''}>Shipped</option><option ${o.status==='Delivered'?'selected':''}>Delivered</option><option ${o.status==='Cancelled'?'selected':''}>Cancelled</option></select><button class="sm7-btn bg-red-50 text-red-700" data-sm7-cancel-order="${o.id}">Cancel</button></div></div></article>`).join(''):'<p class="sm7-muted">এখনও কোনো Shopping Order নেই।</p>';box.querySelectorAll('[data-sm7-order-status]').forEach(el=>el.addEventListener('change',async()=>{if(el.value==='Cancelled'){const b=box.querySelector(`[data-sm7-cancel-order="${el.dataset.sm7OrderStatus}"]`);if(b)b.click();return}try{await updateDoc(doc(db,'shopOrders',el.dataset.sm7OrderStatus),{status:el.value,updatedAt:sm7Stamp()});showToast('স্ট্যাটাস আপডেট হয়েছে')}catch(e){showToast('আপডেট ব্যর্থ')}}));box.querySelectorAll('[data-sm7-cancel-order]').forEach(el=>el.addEventListener('click',async()=>{if(!confirm('এই অর্ডার Cancel করবেন?'))return;try{const orderRef=doc(db,'shopOrders',el.dataset.sm7CancelOrder);await runTransaction(db,async tx=>{const os=await tx.get(orderRef);if(!os.exists())throw new Error('NOT_FOUND');const o=os.data();if(o.status==='Cancelled')return;let pr=null,ps=null,userSnap=null,lotSnaps=[],couponSnap=null;if(o.productId){pr=doc(db,'shopProducts',o.productId);ps=await tx.get(pr)}if(Number(o.coinUsed||0)>0&&o.userId){userSnap=await tx.get(doc(db,'users',o.userId));for(const lot of (o.coinLotUsage||[]))lotSnaps.push({lot,snap:await tx.get(doc(db,'coinLots',lot.id))})}if(o.couponId)couponSnap=await tx.get(doc(db,'giftVouchers',o.couponId));if(ps?.exists())tx.update(pr,{stock:Number(ps.data().stock||0)+Number(o.quantity||1),updatedAt:sm7Stamp()});if(userSnap?.exists()){tx.update(doc(db,'users',o.userId),{coinBalance:Number(userSnap.data().coinBalance||0)+Number(o.coinUsed||0),updatedAt:sm7Stamp()});for(const item of lotSnaps){if(item.snap.exists())tx.update(doc(db,'coinLots',item.lot.id),{remaining:Number(item.snap.data().remaining||0)+Number(item.lot.used||0)})}tx.set(doc(collection(db,'coinTransactions')),{userId:o.userId,type:'refund_shop_order',coins:Number(o.coinUsed||0),orderReference:o.reference,createdAt:sm7Stamp()})}if(couponSnap?.exists()&&couponSnap.data().status==='Redeemed')tx.update(doc(db,'giftVouchers',o.couponId),{status:'Active',usedBy:null,usedAt:null,orderReference:null});tx.update(orderRef,{status:'Cancelled',cancelledBy:'admin',updatedAt:sm7Stamp()})});showToast('অর্ডার বাতিল হয়েছে');sm7LoadShopOrders();sm7LoadProducts()}catch(e){console.error(e);showToast('Cancel ব্যর্থ')}}))}catch(e){console.error(e);box.innerHTML='<p class="text-red-600 text-sm">Shopping orders পড়া যাচ্ছে না। Rules পরীক্ষা করুন।</p>'}}
+async function sm7LoadPrintOrders(){
+ const box=$('#printOrdersList');
+ try{
+  const snap=await getDocs(query(collection(db,'printOrders'),orderBy('createdAt','desc')));
+  const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
+  box.innerHTML=rows.length?rows.map(o=>`<article class="border rounded-2xl p-4 bg-white">
+   <div class="flex flex-wrap justify-between gap-3">
+    <div class="min-w-0">
+     <b>${sm7Safe(o.reference||o.id)}</b>
+     <p class="text-sm mt-1">${sm7Safe(o.name||'নাম দেওয়া হয়নি')} • ${sm7Safe(o.phone||'')}</p>
+     <p class="text-xs text-slate-500 mt-1">${sm7Date(o.createdAt)} • ${sm7Safe(o.status||'Received')}</p>
+     <p class="text-xs text-slate-500 mt-1">${sm7Safe(o.notes||'')}</p>
+     <div class="mt-3 flex flex-wrap gap-2">${(o.files||[]).map((f,i)=>`<div class="border rounded-xl p-2 text-xs flex flex-wrap items-center gap-2">
+      <span>${sm7Safe(f.name)} • ${(Number(f.size||0)/1024/1024).toFixed(2)} MB</span>
+      ${f.deleted?'<span class="text-slate-400">ফাইল মুছে ফেলা হয়েছে</span>':f.storageType==='firestoreChunks'?`<button class="sm7-btn bg-navy text-white !py-1.5 !px-3" data-sm7-download-file="${o.id}" data-file-index="${i}">Download</button>`:f.url?`<a class="sm7-btn bg-navy text-white !py-1.5 !px-3" href="${sm7Safe(f.url)}" target="_blank" rel="noopener">Open / Download</a>`:'<span class="text-amber-600">ফাইল পাওয়া যায়নি</span>'}
+      ${f.deleted?'':`<button class="sm7-btn bg-red-50 text-red-700 !py-1.5 !px-3" data-sm7-delete-file="${o.id}" data-file-index="${i}">Delete file</button>`}
+     </div>`).join('')}</div>
+    </div>
+    <select data-sm7-print-status="${o.id}" class="sm7-field !w-auto !py-2">
+     <option ${o.status==='Received'?'selected':''}>Received</option><option ${o.status==='Printing'?'selected':''}>Printing</option><option ${o.status==='Completed'?'selected':''}>Completed</option><option ${o.status==='Cancelled'?'selected':''}>Cancelled</option>
+     ${o.status==='Upload Failed'?'<option selected disabled>Upload Failed</option>':''}
+    </select>
+   </div>
+  </article>`).join(''):'<p class="sm7-muted">এখনও কোনো Print Order নেই।</p>';
+  box.querySelectorAll('[data-sm7-print-status]').forEach(el=>el.addEventListener('change',async()=>{try{await updateDoc(doc(db,'printOrders',el.dataset.sm7PrintStatus),{status:el.value,updatedAt:sm7Stamp()});showToast('স্ট্যাটাস আপডেট হয়েছে')}catch(e){showToast('স্ট্যাটাস আপডেট ব্যর্থ')}}));
+  box.querySelectorAll('[data-sm7-download-file]').forEach(el=>el.addEventListener('click',async()=>{
+   const orderId=el.dataset.sm7DownloadFile,idx=Number(el.dataset.fileIndex),order=rows.find(x=>x.id===orderId),file=order?.files?.[idx];
+   if(!order||!file||file.deleted)return;
+   el.disabled=true;el.textContent='Preparing…';
+   try{
+    const cs=await getDocs(collection(db,'printOrders',orderId,'fileChunks'));
+    if(cs.empty)throw new Error('FILE_CHUNKS_MISSING');
+    const ordered=cs.docs.map(d=>d.data()).sort((x,y)=>Number(x.index)-Number(y.index));
+    if(ordered.length!==Number(file.chunkCount))throw new Error('FILE_INCOMPLETE');
+    const parts=ordered.map(c=>{const binary=atob(c.data),bytes=new Uint8Array(binary.length);for(let j=0;j<binary.length;j++)bytes[j]=binary.charCodeAt(j);return bytes});
+    const blob=new Blob(parts,{type:file.type||'application/octet-stream'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=file.name||'print-document';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+   }catch(e){console.error(e);showToast('ফাইল ডাউনলোড করা যায়নি। ফাইলের সব অংশ আছে কি না দেখুন।')}
+   finally{el.disabled=false;el.textContent='Download'}
+  }));
+  box.querySelectorAll('[data-sm7-delete-file]').forEach(el=>el.addEventListener('click',async()=>{
+   const idx=Number(el.dataset.fileIndex),o=rows.find(x=>x.id===el.dataset.sm7DeleteFile),f=o?.files?.[idx];
+   if(!o||!f||f.deleted||!confirm('এই মূল ফাইলটি স্থায়ীভাবে মুছবেন? অর্ডার ইতিহাস থাকবে।'))return;
+   try{
+    if(f.storageType==='firestoreChunks'){
+     const cs=await getDocs(collection(db,'printOrders',o.id,'fileChunks'));
+     for(const chunk of cs.docs)await deleteDoc(doc(db,'printOrders',o.id,'fileChunks',chunk.id));
+    }
+    const files=[...(o.files||[])];files[idx]={...f,deleted:true,deletedAt:new Date().toISOString()};
+    await updateDoc(doc(db,'printOrders',o.id),{files,updatedAt:sm7Stamp()});
+    showToast('ফাইল মুছে ফেলা হয়েছে; অর্ডার ইতিহাস রাখা হয়েছে');sm7LoadPrintOrders();
+   }catch(e){console.error(e);showToast('ফাইল মুছতে ব্যর্থ। Firestore Rules পরীক্ষা করুন।')}
+  }));
+ }catch(e){console.error(e);box.innerHTML='<p class="text-red-600 text-sm">Print orders পড়া যাচ্ছে না। Firestore Rules পরীক্ষা করুন।</p>'}
+}
+async function sm7LoadCustomers(){const box=$('#customersList'),req=$('#resetRequests'),vbox=$('#vouchersList');try{const [us,rs,vs]=await Promise.all([getDocs(collection(db,'users')),getDocs(query(collection(db,'passwordResetRequests'),orderBy('createdAt','desc'))),getDocs(query(collection(db,'giftVouchers'),orderBy('createdAt','desc')))]);const users=us.docs.map(d=>({id:d.id,...d.data()}));box.innerHTML=users.length?users.map(u=>`<article class="border rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3"><div><b>${sm7Safe(u.name||'Customer')}</b><p class="text-sm text-slate-500">${sm7Safe(u.phone||u.mobile||'মোবাইল নেই')} • UID ${sm7Safe(u.id)}</p><p class="text-sm mt-1">SM7 Coin: <b>${Number(u.coinBalance||0)}</b> (₹${(Number(u.coinBalance||0)*.5).toFixed(2)}) • Gift vouchers: ${Number(u.giftVoucherCount||0)}</p><p class="text-xs text-slate-500">${u.passwordResetRequired?'নতুন পাসওয়ার্ড সেট করা বাকি':'Reset required নয়'}</p></div><div class="flex gap-2"><button class="sm7-btn bg-amber-50 text-amber-800" data-sm7-reset-user="${u.id}">Force new password</button><button class="sm7-btn bg-slate-100" data-sm7-add-coin="${u.id}">Coin যোগ</button><button class="sm7-btn bg-emerald-50 text-emerald-800" data-sm7-redeem-coin="${u.id}">Coin Redeem</button></div></article>`).join(''):'<p class="sm7-muted">এখনও user profile নেই।</p>';req.innerHTML='<h3 class="font-bold">Password Reset Requests</h3>'+ (rs.docs.length?rs.docs.map(d=>{const r=d.data();return `<article class="mt-2 border rounded-xl p-3 flex flex-wrap justify-between gap-2"><div><b>${sm7Safe(r.phone||r.mobile||r.userId)}</b><p class="text-xs text-slate-500">${sm7Date(r.createdAt)} • ${sm7Safe(r.status||'Pending')}</p></div><button class="sm7-btn bg-navy text-white" data-sm7-resolve-reset="${d.id}" data-user-id="${sm7Safe(r.userId||'')}">Mark reviewed</button></article>`}).join(''):'<p class="sm7-muted mt-2">কোনো reset request নেই।</p>');vbox.innerHTML=vs.docs.map(d=>{const v=d.data();return `<div class="border rounded-xl p-3 flex justify-between gap-2"><span><b>${sm7Safe(v.code)}</b> • ₹${sm7Safe(v.value)} • ${sm7Safe(v.status||'Active')}</span><button class="sm7-btn bg-red-50 text-red-700" data-sm7-del-voucher="${d.id}">Delete</button></div>`}).join('')||'<p class="sm7-muted">কোনো voucher নেই।</p>';box.querySelectorAll('[data-sm7-reset-user]').forEach(b=>b.onclick=async()=>{if(!confirm('এই user-কে পরের login-এ নতুন password সেট করতে বাধ্য করবেন?'))return;try{await updateDoc(doc(db,'users',b.dataset.sm7ResetUser),{passwordResetRequired:true,updatedAt:sm7Stamp()});showToast('Reset required চালু হয়েছে। প্রকৃত Auth password reset-এর জন্য secure Cloud Function লাগবে।');sm7LoadCustomers()}catch(e){showToast('আপডেট ব্যর্থ')}});box.querySelectorAll('[data-sm7-add-coin]').forEach(b=>b.onclick=async()=>{const n=prompt('কত Coin যোগ করবেন?');if(n===null)return;const count=Number(n);if(!Number.isInteger(count)||count<=0){showToast('সঠিক সংখ্যা দিন');return}try{const refDoc=doc(db,'users',b.dataset.sm7AddCoin);const cur=await getDoc(refDoc);const bal=Number(cur.data()?.coinBalance||0);await updateDoc(refDoc,{coinBalance:bal+count,updatedAt:sm7Stamp()});const expiry=new Date(Date.now()+365*86400000).toISOString();await addDoc(collection(db,'coinLots'),{userId:b.dataset.sm7AddCoin,coins:count,remaining:count,createdAt:sm7Stamp(),expiresAt:expiry,source:'admin'});await addDoc(collection(db,'coinTransactions'),{userId:b.dataset.sm7AddCoin,type:'admin_credit',coins:count,createdAt:sm7Stamp(),expiresAt:expiry});showToast('Coin যোগ হয়েছে');sm7LoadCustomers()}catch(e){showToast('Coin যোগ ব্যর্থ')}});box.querySelectorAll('[data-sm7-redeem-coin]').forEach(b=>b.onclick=async()=>{const raw=prompt('কত Coin রিডিম করবেন? (ন্যূনতম ২০)');if(raw===null)return;const n=Number(raw);if(!Number.isInteger(n)||n<20){showToast('ন্যূনতম ২০টি Coin রিডিম করতে হবে');return}try{const uid=b.dataset.sm7RedeemCoin,usr=doc(db,'users',uid),usnap=await getDoc(usr),bal=Number(usnap.data()?.coinBalance||0);if(bal<n){showToast('পর্যাপ্ত Coin নেই');return}const lots=await getDocs(query(collection(db,'coinLots'),where('userId','==',uid),orderBy('createdAt','asc')));let remaining=n;for(const lot of lots.docs){if(remaining<=0)break;const x=lot.data(),valid=new Date(x.expiresAt||0).getTime()>Date.now(),available=valid?Number(x.remaining||0):0;if(available<=0)continue;const used=Math.min(available,remaining);await updateDoc(doc(db,'coinLots',lot.id),{remaining:available-used});remaining-=used}if(remaining>0){showToast('মেয়াদযুক্ত Coin বাদ দিলে পর্যাপ্ত Coin নেই');return}await updateDoc(usr,{coinBalance:bal-n,updatedAt:sm7Stamp()});await addDoc(collection(db,'coinTransactions'),{userId:uid,type:'admin_redeem',coins:-n,value:n*.5,createdAt:sm7Stamp()});showToast(`${n} Coin (₹${(n*.5).toFixed(2)}) রিডিম হয়েছে`);sm7LoadCustomers()}catch(e){console.error(e);showToast('Redeem ব্যর্থ')}});req.querySelectorAll('[data-sm7-resolve-reset]').forEach(b=>b.onclick=async()=>{try{await updateDoc(doc(db,'passwordResetRequests',b.dataset.sm7ResolveReset),{status:'Reviewed',reviewedAt:sm7Stamp()});showToast('Request reviewed');sm7LoadCustomers()}catch(e){showToast('আপডেট ব্যর্থ')}});vbox.querySelectorAll('[data-sm7-del-voucher]').forEach(b=>b.onclick=async()=>{if(!confirm('Voucher মুছবেন?'))return;try{await deleteDoc(doc(db,'giftVouchers',b.dataset.sm7DelVoucher));sm7LoadCustomers()}catch(e){showToast('Delete ব্যর্থ')}})}catch(e){console.error(e);box.innerHTML='<p class="text-red-600 text-sm">ইউজার তালিকা পড়া যাচ্ছে না। Admin-only Firestore rules দরকার।</p>'}}
+$('#addShopProduct')?.addEventListener('click',()=>sm7ProductForm());$('#refreshShopOrders')?.addEventListener('click',sm7LoadShopOrders);$('#refreshPrintOrders')?.addEventListener('click',sm7LoadPrintOrders);$('#refreshCustomers')?.addEventListener('click',sm7LoadCustomers);
+document.body.addEventListener('click',e=>{const edit=e.target.closest('[data-sm7-edit-product]');if(edit)sm7ProductForm(shopProductsCache.find(p=>p.id===edit.dataset.sm7EditProduct));const stock=e.target.closest('[data-sm7-stock]');if(stock){const p=shopProductsCache.find(x=>x.id===stock.dataset.sm7Stock);const n=prompt('নতুন স্টক সংখ্যা দিন',String(p?.stock??0));if(n!==null&&Number.isInteger(Number(n))&&Number(n)>=0)updateDoc(doc(db,'shopProducts',p.id),{stock:Number(n),updatedAt:sm7Stamp()}).then(sm7LoadProducts).catch(()=>showToast('স্টক আপডেট ব্যর্থ'))}const del=e.target.closest('[data-sm7-del-product]');if(del&&confirm('প্রোডাক্টটি মুছবেন?'))deleteDoc(doc(db,'shopProducts',del.dataset.sm7DelProduct)).then(()=>{showToast('প্রোডাক্ট মুছে গেছে');sm7LoadProducts()}).catch(()=>showToast('Delete ব্যর্থ'))});
+$('#voucherForm')?.addEventListener('submit',async e=>{e.preventDefault();const code=$('#voucherCode').value.trim().toUpperCase();const value=Number($('#voucherValue').value);const qty=Math.max(1,Number($('#voucherQty').value||1));const phone=$('#voucherPhone').value.trim();try{let uid=null;if(phone){const us=await getDocs(query(collection(db,'users'),where('phone','==',phone)));if(us.empty){showToast('এই মোবাইলে কোনো অ্যাকাউন্ট পাওয়া যায়নি');return}uid=us.docs[0].id}for(let i=0;i<qty;i++)await addDoc(collection(db,'giftVouchers'),{code:qty>1?`${code}-${String(i+1).padStart(3,'0')}`:code,value,status:'Active',userId:uid,createdAt:sm7Stamp()});if(uid){const ur=doc(db,'users',uid),us=await getDoc(ur);await updateDoc(ur,{giftVoucherCount:Number(us.data()?.giftVoucherCount||0)+qty,updatedAt:sm7Stamp()})}showToast('Voucher তৈরি হয়েছে');e.target.reset();sm7LoadCustomers()}catch(err){console.error(err);showToast('Voucher তৈরি ব্যর্থ')}});
+const _sm7SwitchTab=switchTab;switchTab=function(tab){_sm7SwitchTab(tab);if(tab==='shopproducts')sm7LoadProducts();if(tab==='shoporders')sm7LoadShopOrders();if(tab==='printorders')sm7LoadPrintOrders();if(tab==='customers')sm7LoadCustomers()};
+
+
+try{const settingSnap=await getDoc(doc(db,'siteSettings','public'));if(settingSnap.exists())$('#appDownloadUrlInput').value=settingSnap.data().appDownloadUrl||''}catch(e){}
+$('#appLinkForm')?.addEventListener('submit',async e=>{e.preventDefault();try{await setDoc(doc(db,'siteSettings','public'),{appDownloadUrl:$('#appDownloadUrlInput').value.trim(),updatedAt:serverTimestamp()},{merge:true});showToast('App download link সেভ হয়েছে')}catch(err){showToast('লিঙ্ক সেভ ব্যর্থ')}});
+
+
+try{const paymentSnap=await getDoc(doc(db,'siteSettings','public'));if(paymentSnap.exists()){const ps=paymentSnap.data();$('#shopUpiIdInput').value=ps.upiId||'BHARATPE.9X0E0N0X5Z101210@unitype';$('#onlineDiscountInput').value=ps.onlineDiscountPercent||0;$('#paymentQrUrlInput').value=ps.paymentQrUrl||''}else $('#shopUpiIdInput').value='BHARATPE.9X0E0N0X5Z101210@unitype'}catch(e){$('#shopUpiIdInput').value='BHARATPE.9X0E0N0X5Z101210@unitype'}
+$('#paymentSettingsForm')?.addEventListener('submit',async e=>{e.preventDefault();try{await setDoc(doc(db,'siteSettings','public'),{upiId:$('#shopUpiIdInput').value.trim(),onlineDiscountPercent:Math.min(100,Math.max(0,Number($('#onlineDiscountInput').value||0))),paymentQrUrl:$('#paymentQrUrlInput').value.trim(),updatedAt:serverTimestamp()},{merge:true});showToast('Payment settings সেভ হয়েছে')}catch(err){showToast('Payment settings সেভ ব্যর্থ')}});
+
+lucide.createIcons();
+</script>
+</body>
+</html>
